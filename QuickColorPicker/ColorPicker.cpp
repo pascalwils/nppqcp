@@ -1,5 +1,6 @@
 #include "ColorPicker.h"
 #include "ScreenPicker.h"
+#include "Tools.h"
 
 #include <stdio.h>
 #include <iostream>
@@ -11,46 +12,46 @@ using namespace QuickColorPicker;
 
 ColorPicker::ColorPicker() {
     RGBAColor color = RGBAColor(0, 0, 0, 1);
-	
-	focus_on_show = true;
 
-	_instance = NULL;
-	_parent_window = NULL;
-	_color_popup = NULL;
-	
-	_message_window = NULL;
+    focus_on_show = true;
 
-	_pick_cursor = NULL;
-	_show_picker_cursor = false;
+    _instance = NULL;
+    _parent_window = NULL;
+    _color_popup = NULL;
+    
+    _message_window = NULL;
 
-	_old_color_found_in_palette = false;
-	_old_color = color;
-	_new_color = color;	
+    _pick_cursor = NULL;
+    _show_picker_cursor = false;
 
-	_old_color_row = -1;
-	_old_color_index = -1;
+    _old_color_found_in_palette = false;
+    _old_color = color;
+    _new_color = color; 
 
-	_previous_color = color;
-	_previous_row = -1;
-	_previous_index = -1;
+    _old_color_row = -1;
+    _old_color_index = -1;
 
-	_adjust_color = _old_color;
-	_adjust_preserved_hue = 0;
-	_adjust_preserved_saturation = 0;
+    _previous_color = color;
+    _previous_row = -1;
+    _previous_index = -1;
 
-	_adjust_center_row = 0;
-	_adjust_row = -1;
-	_adjust_index = -1;
-	
-	_is_first_create = false;
-	_is_color_chooser_shown = false;
+    _adjust_color = _old_color;
+    _adjust_preserved_hue = 0;
+    _adjust_preserved_saturation = 0;
 
-	_pScreenPicker = NULL;
+    _adjust_center_row = 0;
+    _adjust_row = -1;
+    _adjust_index = -1;
+    
+    _is_first_create = false;
+    _is_color_chooser_shown = false;
+
+    _pScreenPicker = NULL;
 }
 
 
 ColorPicker::~ColorPicker() {
-	::DestroyWindow(_color_popup);
+    ::DestroyWindow(_color_popup);
 }
 
 
@@ -58,49 +59,49 @@ ColorPicker::~ColorPicker() {
 // GENERAL ROUTINES
 ///////////////////////////////////////////////////////////////////
 void ColorPicker::Create(HINSTANCE instance, HWND parent, HWND message_window) {
-	if (IsCreated()) {
-		throw std::runtime_error("ColorPicker::Create() : duplicate creation");
-	}
+    if (IsCreated()) {
+        throw std::runtime_error("ColorPicker::Create() : duplicate creation");
+    }
 
-	_instance = instance;
-	_parent_window = parent;
+    _instance = instance;
+    _parent_window = parent;
 
-	_is_first_create = true;
+    _is_first_create = true;
 
-	_color_popup = ::CreateDialogParam(_instance, MAKEINTRESOURCE(IDD_COLOR_PICKER_POPUP), _parent_window, (DLGPROC)ColorPopupWinproc, (LPARAM)this);
-	
-	if (message_window == NULL) {
-		_message_window = _parent_window;
-	} else {
-		_message_window = message_window;
-	}
+    _color_popup = ::CreateDialogParam(_instance, MAKEINTRESOURCE(IDD_COLOR_PICKER_POPUP), _parent_window, (DLGPROC)ColorPopupWinproc, (LPARAM)this);
 
-	if (!_color_popup) {
-		throw std::runtime_error("ColorPicker::Create() : CreateDialogParam() function returns null");
-	}
+    if (message_window == NULL) {
+        _message_window = _parent_window;
+    } else {
+        _message_window = message_window;
+    }
+
+    if (!_color_popup) {
+        throw std::runtime_error("ColorPicker::Create() : CreateDialogParam() function returns null");
+    }
 }
 
 
 void ColorPicker::SetColor(RGBAColor color) {
     _old_color = color;
-	_adjust_color = _old_color;
-	_old_color_found_in_palette = false;
+    _adjust_color = _old_color;
+    _old_color_found_in_palette = false;
 
-	GenerateColorPaletteData(color.a);
-	FillRecentColorData();
+    GenerateColorPaletteData(color.a);
+    FillRecentColorData();
 
-	PaintAll();
+    PaintAll();
 }
 
 
 void ColorPicker::SetHSLAColor(HSLAColor color) {
-	RGBAColor rgb = hsl2rgb(color);
-	SetColor(rgb);
+    RGBAColor rgb = hsl2rgb(color);
+    SetColor(rgb);
 }
 
 
 HSLAColor ColorPicker::GetHSLAColor() {
-	HSLAColor hsl = rgb2hsl(_old_color);
+    HSLAColor hsl = rgb2hsl(_old_color);
     return hsl;
 }
 
@@ -110,9 +111,9 @@ bool ColorPicker::SetHexColor(const char* hex_str) {
 
     bool result = hex2rgb(hex_str, &color);
 
-	if (result) {
-		_old_color = color;
-		SetColor(_old_color);
+    if (result) {
+        _old_color = color;
+        SetColor(_old_color);
     }
 
     return result;
@@ -166,8 +167,8 @@ void ColorPicker::PlaceWindow(const HWND hwnd, const RECT rc) {
     RECT rc_win;
     ::GetWindowRect(hwnd, &rc_win);
 
-	int win_width = rc_win.right - rc_win.left;
-	int win_height = rc_win.bottom - rc_win.top;
+    int win_width = rc_win.right - rc_win.left;
+    int win_height = rc_win.bottom - rc_win.top;
 
     int x = 0, y = 0;
 
@@ -196,7 +197,7 @@ void ColorPicker::Show() {
         flags = flags | SWP_NOACTIVATE;
     }
 
-	::SetWindowPos(_color_popup, HWND_TOP, 0, 0, 0, 0, flags);
+    ::SetWindowPos(_color_popup, HWND_TOP, 0, 0, 0, 0, flags);
 
     PaintAll();
 
@@ -222,15 +223,15 @@ BOOL CALLBACK ColorPicker::ColorPopupWinproc(HWND hwnd, UINT message, WPARAM wpa
             pColorPicker->_color_popup = hwnd;
             ::SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)lparam);
             pColorPicker->ColorPopupMessageHandle(message, wparam, lparam);
-			return TRUE;
-		}
-		case WM_MEASUREITEM:
-		{
-			LPMEASUREITEMSTRUCT lpmis = (LPMEASUREITEMSTRUCT)lparam; 
-			lpmis->itemHeight = 12; 
-			lpmis->itemWidth = 12;
-			return TRUE;
-		}
+            return TRUE;
+        }
+        case WM_MEASUREITEM:
+        {
+            LPMEASUREITEMSTRUCT lpmis = (LPMEASUREITEMSTRUCT)lparam; 
+            lpmis->itemHeight = 12; 
+            lpmis->itemWidth = 12;
+            return TRUE;
+        }
         default:
         {
             ColorPicker *pColorPicker = reinterpret_cast<ColorPicker*>(::GetWindowLongPtr(hwnd, GWLP_USERDATA));
@@ -280,12 +281,12 @@ BOOL CALLBACK ColorPicker::ColorPopupMessageHandle(UINT message, WPARAM wparam, 
             if (LOWORD(wparam) == WA_INACTIVE) {
                 if (_is_first_create) {
                     // prevent this message at first create
-					_is_first_create = false;
-					return TRUE;
-				}
-				if (!_is_color_chooser_shown) {
-					::SendMessage(_message_window, WM_QCP_DEACTIVATE, 0, 0);
-				}
+                    _is_first_create = false;
+                    return TRUE;
+                }
+                if (!_is_color_chooser_shown) {
+                    ::SendMessage(_message_window, WM_QCP_DEACTIVATE, 0, 0);
+                }
             }
             return TRUE;
     }
@@ -305,24 +306,24 @@ void ColorPicker::OnInitDialog() {
 
     // place window
     ::GetWindowRect(_color_popup, &_parent_rc);
-	PlaceWindow(_color_popup, _parent_rc);
+    PlaceWindow(_color_popup, _parent_rc);
 
-	// dialog control ui stuff
-	_pick_cursor = ::LoadCursor(_instance, MAKEINTRESOURCE(IDI_CURSOR));
-	HICON hIcon = (HICON)::LoadImage(_instance, MAKEINTRESOURCE(IDI_PICKER), IMAGE_ICON, 16, 16, 0);
+    // dialog control ui stuff
+    _pick_cursor = ::LoadCursor(_instance, MAKEINTRESOURCE(IDI_CURSOR));
+    HICON hIcon = (HICON)::LoadImage(_instance, MAKEINTRESOURCE(IDI_PICKER), IMAGE_ICON, 16, 16, 0);
 
-	HWND ctrl;
-	ctrl = ::GetDlgItem(_color_popup, ID_PICK);
-	::MoveWindow(ctrl, BUTTON_X, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, false);
-	::SendDlgItemMessage(_color_popup, ID_PICK, BM_SETIMAGE, IMAGE_ICON, (LPARAM)hIcon);
+    HWND ctrl;
+    ctrl = ::GetDlgItem(_color_popup, ID_PICK);
+    ::MoveWindow(ctrl, BUTTON_X, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, false);
+    ::SendDlgItemMessage(_color_popup, ID_PICK, BM_SETIMAGE, IMAGE_ICON, (LPARAM)hIcon);
 
-	ctrl = ::GetDlgItem(_color_popup, ID_MORE);
-	::MoveWindow(ctrl, BUTTON_X + BUTTON_WIDTH + CONTROL_PADDING, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, false);
+    ctrl = ::GetDlgItem(_color_popup, ID_MORE);
+    ::MoveWindow(ctrl, BUTTON_X + BUTTON_WIDTH + CONTROL_PADDING, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, false);
 
-	ctrl = ::GetDlgItem(_color_popup, IDC_COLOR_TEXT);
-	::MoveWindow(ctrl, TEXT_X, TEXT_Y, TEXT_WIDTH, TEXT_HEIGHT, false);
+    ctrl = ::GetDlgItem(_color_popup, IDC_COLOR_TEXT);
+    ::MoveWindow(ctrl, TEXT_X, TEXT_Y, TEXT_WIDTH, TEXT_HEIGHT, false);
 
-	// generate palette color array
+    // generate palette color array
     GenerateColorPaletteData();
     LoadRecentColorData();
     FillRecentColorData();
@@ -350,11 +351,11 @@ BOOL ColorPicker::OnMouseMove(LPARAM lparam) {
                 DrawColorHoverBox(_previous_row, _previous_index, false);
             }
             _previous_color = RGBAColor(0,0,0,1);
-			_previous_row = -1;
-			_previous_index = -1;
-		}
+            _previous_row = -1;
+            _previous_index = -1;
+        }
 
-		if (_adjust_row != -1) {
+        if (_adjust_row != -1) {
             DrawAdjustZoneHoverBox(_adjust_row, _adjust_index, false);
             _adjust_row = -1;
             _adjust_index = -1;
@@ -418,8 +419,8 @@ void ColorPicker::DrawColorBlock(const HDC hdc, const RECT rc, const RGBAColor c
         COLORREF fgcolor = mixcolor(rgb, RGBAColor(182, 182, 182, 1));
         COLORREF bkcolor = mixcolor(rgb, RGBAColor(255, 255, 255, 1));
         hbrush = ::CreateHatchBrush(HS_FDIAGONAL, fgcolor);
-		::SetBkColor(hdc, bkcolor);
-	}
+        ::SetBkColor(hdc, bkcolor);
+    }
 
     ::FillRect(hdc, &rc, hbrush);
     ::DeleteObject(hbrush);
@@ -429,8 +430,8 @@ void ColorPicker::DrawColorBlock(const HDC hdc, const RECT rc, const RGBAColor c
 COLORREF ColorPicker::mixcolor(RGBAColor fgcolor, RGBAColor bkcolor) {
     double r, g, b;
     r = (fgcolor.r * fgcolor.a) + (bkcolor.r * (1.0 - fgcolor.a));
-	g = (fgcolor.g * fgcolor.a) + (bkcolor.g * (1.0 - fgcolor.a));
-	b = (fgcolor.b * fgcolor.a) + (bkcolor.b * (1.0 - fgcolor.a));
+    g = (fgcolor.g * fgcolor.a) + (bkcolor.g * (1.0 - fgcolor.a));
+    b = (fgcolor.b * fgcolor.a) + (bkcolor.b * (1.0 - fgcolor.a));
     return RGB(r, g, b);
 }
 
@@ -443,31 +444,31 @@ void ColorPicker::PaintColorCompareSwatch() {
     // paint swatch /////////
     HDC hdc_win = ::GetDC(_color_popup);
     RECT rc;
-	HBRUSH brush;
+    HBRUSH brush;
 
-	// new color
-	rc.top = SWATCH_Y;
-	rc.bottom = rc.top+SWATCH_HEIGHT;
-	rc.left = SWATCH_X;
-	rc.right = rc.left + SWATCH_WIDTH;
-	DrawColorBlock(hdc_win, rc, _new_color);
+    // new color
+    rc.top = SWATCH_Y;
+    rc.bottom = rc.top+SWATCH_HEIGHT;
+    rc.left = SWATCH_X;
+    rc.right = rc.left + SWATCH_WIDTH;
+    DrawColorBlock(hdc_win, rc, _new_color);
 
-	// old color
-	rc.left = rc.right;
-	rc.left = rc.left + SWATCH_WIDTH;
-	DrawColorBlock(hdc_win, rc, _old_color);
-	
-	// frame
-	rc.left = SWATCH_X;
-	rc.right = rc.left + SWATCH_WIDTH*2;
-	rc.top = SWATCH_Y;
-	rc.bottom = rc.top + SWATCH_HEIGHT;
-	::InflateRect(&rc, 1, 1);
-	brush = ::CreateSolidBrush(CONTROL_BORDER_COLOR);
-	::FrameRect(hdc_win, &rc, brush);
-	::DeleteObject(brush);
+    // old color
+    rc.left = rc.right;
+    rc.left = rc.left + SWATCH_WIDTH;
+    DrawColorBlock(hdc_win, rc, _old_color);
+    
+    // frame
+    rc.left = SWATCH_X;
+    rc.right = rc.left + SWATCH_WIDTH*2;
+    rc.top = SWATCH_Y;
+    rc.bottom = rc.top + SWATCH_HEIGHT;
+    ::InflateRect(&rc, 1, 1);
+    brush = ::CreateSolidBrush(CONTROL_BORDER_COLOR);
+    ::FrameRect(hdc_win, &rc, brush);
+    ::DeleteObject(brush);
 
-	::ReleaseDC(_color_popup, hdc_win);
+    ::ReleaseDC(_color_popup, hdc_win);
 }
 
 
@@ -480,17 +481,17 @@ void ColorPicker::DisplayNewColor(RGBAColor color) {
     _new_color = color;
 
     // prepare data
-	char hex[8];
-	rgb2hex(color, hex, sizeof(hex));
+    char hex[8];
+    rgb2hex(color, hex, sizeof(hex));
 
-	HSLAColor hsl = rgb2hsl(color);
+    HSLAColor hsl = rgb2hsl(color);
 
-	// output
-	wchar_t output[80];
-	swprintf(output, sizeof(output), L"#%hs / HSLA(%d,%d%%,%d%%,%.2g)", hex, round(hsl.h), round(hsl.s * 100), round(hsl.l * 100), hsl.a);
-	::SetDlgItemText(_color_popup, IDC_COLOR_TEXT, output);
+    // output
+    wchar_t output[80];
+    swprintf(output, sizeof(output), L"#%hs / HSLA(%d,%d%%,%d%%,%.2g)", hex, round(hsl.h), round(hsl.s * 100), round(hsl.l * 100), hsl.a);
+    ::SetDlgItemText(_color_popup, IDC_COLOR_TEXT, output);
 
-	PaintColorCompareSwatch();
+    PaintColorCompareSwatch();
 }
 
 
@@ -498,31 +499,28 @@ void ColorPicker::DisplayNewColor(RGBAColor color) {
 // COLOR PALETTE
 ///////////////////////////////////////////////////////////////////
 void ColorPicker::GenerateColorPaletteData(float alpha) {
-	int row = 0;
+    int row = 0;
 
-	// generate grayscale - 3 ROWS
-	for (int i = 0; i < PALETTE_COLUMN; i++) {
-
-		int t0 = (i-RECENT_ZONE_COLUMN)*0x11;
-		if (t0 < 0) t0 = 0;
-		if (t0 > 0xFF) t0 = 0xFF;
-	
-		int t1 = t0 + 0x02;
-		int t1s = t1 - 0x0F;
+    // generate grayscale - 3 ROWS
+    for (int i = 0; i < PALETTE_COLUMN; i++) {
+        int t0 = clamp((i - RECENT_ZONE_COLUMN) * 0x11, 0, 0xFF);
+    
+        int t1 = t0 + 0x02;
+        int t1s = t1 - 0x0F;
         if(t1 > 0xff) t1 = 0xff;
         if(t1s < 0) t1 = t1s = 0;
-	
-		int t2 = t0 - 0x02;
-		int t2s = t2 + 0x0F;
+    
+        int t2 = t0 - 0x02;
+        int t2s = t2 + 0x0F;
         if(t2 < 0) t2 = t2s = 0;
         if(t2s > 0xff) t2s = 0xff;
-		
+        
         _color_palette_data[row    ][i] = RGBAColor(t0, t0, t0, alpha);
-		_color_palette_data[row + 1][i] = RGBAColor(t1, t1, t1s, alpha);
-		_color_palette_data[row + 2][i] = RGBAColor(t2, t2, t2s, alpha);
-	}
-	
-	row += 3;
+        _color_palette_data[row + 1][i] = RGBAColor(t1, t1, t1s, alpha);
+        _color_palette_data[row + 2][i] = RGBAColor(t2, t2, t2s, alpha);
+    }
+    
+    row += 3;
 
     // generate web adaptive palette colors
     for (double l = 0.125; l < 1; l += 0.075) {
@@ -556,7 +554,7 @@ void ColorPicker::SaveToRecentColor(RGBAColor color) {
     // shift start at the end
     int pos = RECENT_ZONE_ROW*RECENT_ZONE_COLUMN - 1;
 
-	// whether the color is already inside the list
+    // whether the color is already inside the list
     for (int i = 0; i < RECENT_ZONE_ROW*RECENT_ZONE_COLUMN; i++) {
         if (_recent_color_data[i] == color) {
             // already first one
@@ -566,7 +564,7 @@ void ColorPicker::SaveToRecentColor(RGBAColor color) {
             // found in the middle - set shift start
             pos = i;
             break;
-		}
+        }
     }
 
     // shift the array right
@@ -585,9 +583,9 @@ void ColorPicker::PaintColorPalette() {
     RECT rc;
 
     RGBAColor color;
-	HBRUSH hbrush;
-	HDC hdc = ::GetDC(_color_popup);
-	
+    HBRUSH hbrush;
+    HDC hdc = ::GetDC(_color_popup);
+    
     // frame
     rc.left = PALETTE_X;
     rc.top =  PALETTE_Y;
@@ -597,11 +595,11 @@ void ColorPicker::PaintColorPalette() {
     // save the area rect for later use
     ::CopyRect(&_rect_palette, &rc);
 
-	::InflateRect(&rc, 1, 1);
+    ::InflateRect(&rc, 1, 1);
 
-	hbrush = ::CreateSolidBrush(CONTROL_BORDER_COLOR);
-	::FrameRect(hdc, &rc, hbrush);
-	::DeleteObject(hbrush);
+    hbrush = ::CreateSolidBrush(CONTROL_BORDER_COLOR);
+    ::FrameRect(hdc, &rc, hbrush);
+    ::DeleteObject(hbrush);
 
     // swatches
     for (int row = 0; row < PALETTE_ROW; row++) {
@@ -640,7 +638,7 @@ void ColorPicker::DrawColorHoverBox(int row, int index, bool is_hover) {
     HDC hdc = ::GetDC(_color_popup);
     HBRUSH hbrush;
     RECT rc;
-	RGBAColor color;
+    RGBAColor color;
 
     color = _color_palette_data[row][index];
 
@@ -650,9 +648,9 @@ void ColorPicker::DrawColorHoverBox(int row, int index, bool is_hover) {
     rc.bottom = rc.top + PALETTE_CELL_SIZE;
 
     if (is_hover) {
-		color.r = color.r ^ 0xff;
-		color.g = color.g ^ 0xff;
-		color.b = color.b ^ 0xff;
+        color.r = color.r ^ 0xff;
+        color.g = color.g ^ 0xff;
+        color.b = color.b ^ 0xff;
         hbrush = ::CreateSolidBrush((COLORREF)color);
         ::FrameRect(hdc, &rc, hbrush);
         ::DeleteBrush(hbrush);
@@ -686,11 +684,11 @@ void ColorPicker::PaletteMouseMove(const POINT p) {
         DrawColorHoverBox(_previous_row, _previous_index, false);
     }
 
-	// draw current swatch
-	DrawColorHoverBox(row, index, true);
+    // draw current swatch
+    DrawColorHoverBox(row, index, true);
 
-	_previous_color = color;
-	_previous_row = row;
+    _previous_color = color;
+    _previous_row = row;
     _previous_index = index;
 
     DisplayNewColor(color);
@@ -714,65 +712,65 @@ void ColorPicker::PaletteMouseClick(const POINT p, bool is_right_button) {
 ///////////////////////////////////////////////////////////////////
 
 void ColorPicker::GenerateAdjustColors(const RGBAColor color) {
-	HSLAColor hsl = rgb2hsl(color);
-	
-	// preserve color hue after converting between rgb & hsl
+    HSLAColor hsl = rgb2hsl(color);
+    
+    // preserve color hue after converting between rgb & hsl
     if(hsl.s == 0) {
-		hsl.h = _adjust_preserved_hue;
+        hsl.h = _adjust_preserved_hue;
     } else {
-		_adjust_preserved_hue = hsl.h;
-	}
+        _adjust_preserved_hue = hsl.h;
+    }
 
-	// increase the saturation to avoid color lost on extreme lightness
+    // increase the saturation to avoid color lost on extreme lightness
     if (hsl.l == 0 || hsl.l == 100) {
-		hsl.s = _adjust_preserved_saturation;
+        hsl.s = _adjust_preserved_saturation;
     } else {
-		_adjust_preserved_saturation = hsl.s;
-	}
+        _adjust_preserved_saturation = hsl.s;
+    }
 
     double q[] = { 20.0, 10.0, 5.0, 2.0, 1.0, 0, -1.0, -2.0, -5.0, -10.0, -20.0 };
 
     for (int i = 0; i < ADJUST_ZONE_ROW; i++) {
         if (q[i] == 0) {
-			_adjust_center_row = i;
-			_adjust_color_data[0][i] = color;
-			_adjust_color_data[1][i] = color;
-			_adjust_color_data[2][i] = color;
-			_adjust_color_data[3][i] = color;
+            _adjust_center_row = i;
+            _adjust_color_data[0][i] = color;
+            _adjust_color_data[1][i] = color;
+            _adjust_color_data[2][i] = color;
+            _adjust_color_data[3][i] = color;
         } else {
-		_adjust_color_data[0][i] = hsl2rgb(hsl.h + q[i], hsl.s, hsl.l, hsl.a);
+            _adjust_color_data[0][i] = hsl2rgb(hsl.h + q[i], hsl.s, hsl.l, hsl.a);
             _adjust_color_data[1][i] = hsl2rgb(hsl.h, hsl.s + q[i] / 100, hsl.l, hsl.a);
             _adjust_color_data[2][i] = hsl2rgb(hsl.h, hsl.s, hsl.l + q[i] / 100, hsl.a);
-		_adjust_color_data[3][i] = hsl2rgb(hsl.h, hsl.s, hsl.l, hsl.a + (float)q[i] / 100);
-	}
-}
+            _adjust_color_data[3][i] = hsl2rgb(hsl.h, hsl.s, hsl.l, hsl.a + (float)q[i] / 100);
+        }
+    }
 }
 
 
 void ColorPicker::PaintAdjustZone() {
-	GenerateAdjustColors(_adjust_color);
+    GenerateAdjustColors(_adjust_color);
 
-	RECT rc;
+    RECT rc;
     int base_x = PALETTE_WIDTH + CONTROL_PADDING * 2;
-	int base_y = CONTROL_PADDING;
+    int base_y = CONTROL_PADDING;
 
-	HBRUSH hbrush;
-	HDC hdc = ::GetDC(_color_popup);
-	
-	// frame
-	rc.left = ADJUST_ZONE_X;
-	rc.right = rc.left + ADJUST_ZONE_WIDTH;
-	rc.top =  ADJUST_ZONE_Y;
-	rc.bottom = rc.top + ADJUST_ZONE_HEIGHT;
-	
-	// save the area rect for later use
-	::CopyRect(&_rect_adjust_buttons, &rc);
+    HBRUSH hbrush;
+    HDC hdc = ::GetDC(_color_popup);
+    
+    // frame
+    rc.left = ADJUST_ZONE_X;
+    rc.right = rc.left + ADJUST_ZONE_WIDTH;
+    rc.top =  ADJUST_ZONE_Y;
+    rc.bottom = rc.top + ADJUST_ZONE_HEIGHT;
+    
+    // save the area rect for later use
+    ::CopyRect(&_rect_adjust_buttons, &rc);
 
-	::InflateRect(&rc, 1, 1);
+    ::InflateRect(&rc, 1, 1);
 
-	hbrush = ::CreateSolidBrush(CONTROL_BORDER_COLOR);
-	::FillRect(hdc, &rc, hbrush);
-	::DeleteObject(hbrush);
+    hbrush = ::CreateSolidBrush(CONTROL_BORDER_COLOR);
+    ::FillRect(hdc, &rc, hbrush);
+    ::DeleteObject(hbrush);
 
     // paint current color
     RGBAColor color;
@@ -782,24 +780,24 @@ void ColorPicker::PaintAdjustZone() {
         rc.bottom = rc.top + ADJUST_ZONE_CELL_HEIGHT;
         rc.left = ADJUST_ZONE_X;
         rc.right = rc.left + ADJUST_ZONE_CELL_WIDTH;
-		DrawColorBlock(hdc, rc, _adjust_color_data[0][i], true);
+        DrawColorBlock(hdc, rc, _adjust_color_data[0][i], true);
 
-		rc.left = rc.right+1;
-		rc.right = rc.left + ADJUST_ZONE_CELL_WIDTH;
-		DrawColorBlock(hdc, rc, _adjust_color_data[1][i], true);
+        rc.left = rc.right+1;
+        rc.right = rc.left + ADJUST_ZONE_CELL_WIDTH;
+        DrawColorBlock(hdc, rc, _adjust_color_data[1][i], true);
 
-		rc.left = rc.right+1;
-		rc.right = rc.left + ADJUST_ZONE_CELL_WIDTH;
-		DrawColorBlock(hdc, rc, _adjust_color_data[2][i], true);
+        rc.left = rc.right+1;
+        rc.right = rc.left + ADJUST_ZONE_CELL_WIDTH;
+        DrawColorBlock(hdc, rc, _adjust_color_data[2][i], true);
 
-		rc.left = rc.right+1;
-		rc.right = rc.left + ADJUST_ZONE_CELL_WIDTH;
-		DrawColorBlock(hdc, rc, _adjust_color_data[3][i]);
-		::DeleteObject(hbrush);
+        rc.left = rc.right+1;
+        rc.right = rc.left + ADJUST_ZONE_CELL_WIDTH;
+        DrawColorBlock(hdc, rc, _adjust_color_data[3][i]);
+        ::DeleteObject(hbrush);
 
-	}
+    }
 
-	// center row
+    // center row
     DrawAdjustZoneCenterRow(hdc);
 
     ::ReleaseDC(_color_popup, hdc);
@@ -814,14 +812,14 @@ void ColorPicker::DrawAdjustZoneCenterRow(HDC hdc) {
     rc.bottom = rc.top + ADJUST_ZONE_CELL_HEIGHT;
     DrawColorBlock(hdc, rc, _adjust_color, true);
 
-	rc.left = rc.right;
-	rc.right = rc.right + ADJUST_ZONE_CELL_WIDTH;
-	DrawColorBlock(hdc, rc, _adjust_color);
+    rc.left = rc.right;
+    rc.right = rc.right + ADJUST_ZONE_CELL_WIDTH;
+    DrawColorBlock(hdc, rc, _adjust_color);
 
-	rc.left = ADJUST_ZONE_X;
-	::InflateRect(&rc, 1, 0);
-	HBRUSH hbrush = ::CreateSolidBrush(CONTROL_BORDER_COLOR);
-	::FrameRect(hdc, &rc, hbrush);
+    rc.left = ADJUST_ZONE_X;
+    ::InflateRect(&rc, 1, 0);
+    HBRUSH hbrush = ::CreateSolidBrush(CONTROL_BORDER_COLOR);
+    ::FrameRect(hdc, &rc, hbrush);
     ::DeleteObject(hbrush);
 }
 
@@ -830,7 +828,7 @@ void ColorPicker::DrawAdjustZoneHoverBox(int row, int index, bool is_hover) {
     HDC hdc = ::GetDC(_color_popup);
     HBRUSH hbrush;
     RECT rc;
-	RGBAColor color;
+    RGBAColor color;
 
     color = _adjust_color_data[index][row];
 
@@ -844,10 +842,10 @@ void ColorPicker::DrawAdjustZoneHoverBox(int row, int index, bool is_hover) {
             rc.left = _rect_adjust_buttons.left;
             rc.right = _rect_adjust_buttons.right;
             ::InflateRect(&rc, 0, -1);
-		}
-		color.r = color.r ^ 0xff;
-		color.g = color.g ^ 0xff;
-		color.b = color.b ^ 0xff;
+        }
+        color.r = color.r ^ 0xff;
+        color.g = color.g ^ 0xff;
+        color.b = color.b ^ 0xff;
         hbrush = ::CreateSolidBrush(color);
         ::FrameRect(hdc, &rc, hbrush);
         ::DeleteBrush(hbrush);
@@ -879,14 +877,14 @@ void ColorPicker::AdjustZoneMouseMove(const POINT p) {
 
     // clean previous swatch
     if (_adjust_row != -1) {
-		DrawAdjustZoneHoverBox(_adjust_row, _adjust_index, false);
-	}
+        DrawAdjustZoneHoverBox(_adjust_row, _adjust_index, false);
+    }
 
-	// draw current swatch
-	DrawAdjustZoneHoverBox(row, index, true);
+    // draw current swatch
+    DrawAdjustZoneHoverBox(row, index, true);
 
-	_adjust_row = row;
-	_adjust_index = index;
+    _adjust_row = row;
+    _adjust_index = index;
 
     RGBAColor color = _adjust_color_data[index][row];
     DisplayNewColor(color);
@@ -905,11 +903,11 @@ void ColorPicker::AdjustZoneMouseClick(const POINT p, bool is_right_button) {
         _old_color = color;
         SaveToRecentColor(_old_color);
         ::SendMessage(_message_window, WM_QCP_PICK, (COLORREF)_old_color, 0);
-		return;
-	}
+        return;
+    }
 
-	// adjust color
-	_adjust_color = color;
+    // adjust color
+    _adjust_color = color;
     PaintAdjustZone();
     DrawAdjustZoneHoverBox(_adjust_row, _adjust_index, true);
 
@@ -937,10 +935,10 @@ void ColorPicker::StartPickScreenColor() {
 
     ::SendMessage(_message_window, WM_QCP_START_SCREEN_PICKER, 0, 0);
 
-	if (!_pScreenPicker) {
-		_pScreenPicker = new ScreenPicker();
-		_pScreenPicker->Create(_instance, _color_popup);
-	}
+    if (!_pScreenPicker) {
+        _pScreenPicker = new ScreenPicker();
+        _pScreenPicker->Create(_instance, _color_popup);
+    }
 
     _pScreenPicker->SetColor(_old_color);
     _pScreenPicker->Start();
@@ -966,9 +964,9 @@ void ColorPicker::ShowNativeColorChooser() {
     // Initialize CHOOSECOLOR 
     CHOOSECOLOR cc;
     static COLORREF custom_colors[16] = {
-		0,0,0,0,\
-		0,0,0,0,\
-		0,0,0,0,\
+        0,0,0,0,\
+        0,0,0,0,\
+        0,0,0,0,\
         0,0,0,0,\
     };
 
@@ -976,16 +974,16 @@ void ColorPicker::ShowNativeColorChooser() {
         custom_colors[i] = (COLORREF)_recent_color_data[i];
     }
 
-	::ZeroMemory(&cc, sizeof(cc));
-	cc.lStructSize = sizeof(cc);
-	cc.hwndOwner = _color_popup;
-	cc.lpCustColors = (LPDWORD)custom_colors;
-	cc.rgbResult = _old_color;
-	cc.Flags = CC_FULLOPEN | CC_RGBINIT | CC_ENABLEHOOK;
-	cc.lpfnHook = (LPCCHOOKPROC)ColorChooserWINPROC;
-	cc.lCustData = (LPARAM)&_parent_rc;
+    ::ZeroMemory(&cc, sizeof(cc));
+    cc.lStructSize = sizeof(cc);
+    cc.hwndOwner = _color_popup;
+    cc.lpCustColors = (LPDWORD)custom_colors;
+    cc.rgbResult = _old_color;
+    cc.Flags = CC_FULLOPEN | CC_RGBINIT | CC_ENABLEHOOK;
+    cc.lpfnHook = (LPCCHOOKPROC)ColorChooserWINPROC;
+    cc.lCustData = (LPARAM)&_parent_rc;
 
-	Hide();
+    Hide();
 
     _is_color_chooser_shown = true;
 
@@ -1005,9 +1003,9 @@ UINT_PTR CALLBACK ColorPicker::ColorChooserWINPROC(HWND hwnd, UINT message, WPAR
         // reposition the color chooser window
         CHOOSECOLOR* cc = (CHOOSECOLOR*)lparam;
         RECT* rc = (RECT*)cc->lCustData;
-		RECT rc_copy;
-		::CopyRect(&rc_copy, rc);
-		PlaceWindow(hwnd, rc_copy);
+        RECT rc_copy;
+        ::CopyRect(&rc_copy, rc);
+        PlaceWindow(hwnd, rc_copy);
     }
 
     return 0;
@@ -1036,22 +1034,22 @@ bool ColorPicker::hex2rgb(const char* hex_str, RGBAColor* out_color) {
 
     strcpy_s(hex_copy, hex_str);
 
-	// pad 3 char hex
-	if (len == 3) {
-		hex_copy[0] = hex_str[0];
-		hex_copy[1] = hex_str[0];
-		hex_copy[2] = hex_str[1];
-		hex_copy[3] = hex_str[1];
-		hex_copy[4] = hex_str[2];
-		hex_copy[5] = hex_str[2];
-		hex_copy[6] = L'\0';
-	}
+    // pad 3 char hex
+    if (len == 3) {
+        hex_copy[0] = hex_str[0];
+        hex_copy[1] = hex_str[0];
+        hex_copy[2] = hex_str[1];
+        hex_copy[3] = hex_str[1];
+        hex_copy[4] = hex_str[2];
+        hex_copy[5] = hex_str[2];
+        hex_copy[6] = L'\0';
+    }
 
-	// convert to color value - color order is inverted
-	COLORREF rgb = strtol(hex_copy, NULL, 16);
+    // convert to color value - color order is inverted
+    COLORREF rgb = strtol(hex_copy, NULL, 16);
 
-	out_color->r = GetBValue(rgb);
-	out_color->g = GetGValue(rgb);
+    out_color->r = GetBValue(rgb);
+    out_color->g = GetGValue(rgb);
     out_color->b = GetRValue(rgb);
 
     return true;
@@ -1062,127 +1060,109 @@ bool ColorPicker::rgb2hex(const RGBAColor rgb, char* out_hex, int buffer_size) {
     // check length
     if (buffer_size < 7) {
         return false;
-	}
+    }
 
-	COLORREF color = RGB(rgb.b, rgb.g, rgb.r);
-	sprintf_s(out_hex, buffer_size, "%06x", color);
+    COLORREF color = RGB(rgb.b, rgb.g, rgb.r);
+    sprintf_s(out_hex, buffer_size, "%06x", color);
 
     return true;
 }
 
-HSLAColor ColorPicker::rgb2hsl(RGBAColor rgb){
 
-	double r, g, b, a;
-	r = (double)rgb.r / 255.0f;
-	g = (double)rgb.g / 255.0f;
-    b = (double)rgb.b / 255.0f;
+HSLAColor ColorPicker::rgb2hsl(RGBAColor rgb) {
+    double r = (double)rgb.r / 255.0f;
+    double g = (double)rgb.g / 255.0f;
+    double b = (double)rgb.b / 255.0f;
 
-	a = rgb.a;
-	a = a<0 ? 0 : a;
-	a = a>1.0f ? 1.0f : a;
+    double max = max(max(r, g), b);
+    double min = min(min(r, g), b);
+    double delta = max - min;
 
-    double max, min, delta;
-	max = max(max(r, g), b);
-	min = min(min(r, g), b);
-	delta = max - min;
-
-    double h, s, l;
-	h = s = 0;
-	l = (max + min) / 2.0f;
+    double h = 0;
+    double s = 0;
+    double l = (max + min) / 2.0f;
 
     if (delta != 0) {
-
-		if (l < 0.5f) {
-			s = delta / (max + min);
-		}
-		else {
-			s = delta / (2.0f - max - min);
-		}
+        if (l < 0.5f) {
+            s = delta / (max + min);
+        } else {
+            s = delta / (2.0f - max - min);
+        }
 
         if (r == max) {
             h = (g - b) / delta ;
-		}else if(g == max){
+        } else if (g == max) {
             h = (b - r) / delta + 2.0;
-		}else{
+        } else {
             h = (r - g) / delta + 4.0;
         }
 
-		h = h * 60.0f;
-		if (h < 0)
-			h += 360.0f;
-
+        h = h * 60.0f;
+        if (h < 0) {
+            h += 360.0f;
+        }
     }
 
-	return HSLAColor(h, s, l, rgb.a);
+    return HSLAColor(h, s, l, rgb.a);
 }
 
 
 RGBAColor ColorPicker::hsl2rgb(HSLAColor hsl) {
-	return hsl2rgb(hsl.h, hsl.s, hsl.l, hsl.a);
+    return hsl2rgb(hsl.h, hsl.s, hsl.l, hsl.a);
 }
 
-RGBAColor ColorPicker::hsl2rgb(double h0, double s0, double l0, float a0){
 
-	int r, g, b;
-	double h, s, l, a;
+RGBAColor ColorPicker::hsl2rgb(double h0, double s0, double l0, float a0) {
+    double h = (int)h0 % 360 + (h0 - (int)h0);
+    if (h < 0) {
+        h = 360.0 + h;
+    }
 
-	h = (int)h0 % 360 + (h0 - (int)h0);
-	if (h<0) h = 360.0f + h;
+    double s = clamp(s0, 0.0, 1.0);
+    double l = clamp(l0, 0.0, 1.0);
+    float a = clamp(a0, 0.0f, 1.0f);
 
-	s = s0<0 ? 0 : s0;
-	s = s0>1.0f ? 1.0f : s;
+    double tr = l;
+    double tg = l;
+    double tb = l;
 
-	l = l0<0 ? 0 : l0;
-	l = l0>1.0f ? 1.0f : l;
+    if(s > 0) {
+        double th = h / 360.0;
 
-	a = a0<0 ? 0 : a0;
-	a = a0>1.0f ? 1.0f : a;
+        double t2 = l < 0.5 ? l * (1.0 + s) : (l + s) - (l * s);
+        double t1 = 2.0 * l - t2;
 
-	if (s == 0)
-	{
-		r = round(l * 255.0f);
-		g = round(l * 255.0f);
-		b = round(l * 255.0f);
-	}
-	else
-	{
-		double t1, t2;
-		double th = h / 360.0f;
+        tr = calc_color(th + (1.0 / 3.0), t1, t2);
+        tg = calc_color(th, t1, t2);
+        tb = calc_color(th - (1.0 / 3.0), t1, t2);
+    }
 
-		if (l < 0.5f)
-		{
-			t2 = l * (1.0f + s);
-		}
-		else
-		{
-			t2 = (l + s) - (l * s);
-		}
-		t1 = 2.0f * l - t2;
-
-		double tr, tg, tb;
-		tr = th + (1.0f / 3.0f);
-		tg = th;
-		tb = th - (1.0f / 3.0f);
-
-		tr = calc_color(tr, t1, t2);
-		tg = calc_color(tg, t1, t2);
-		tb = calc_color(tb, t1, t2);
-		r = round(tr * 255.0f);
-		g = round(tg * 255.0f);
-		b = round(tb * 255.0f);
-	}
-
-	return RGBAColor(r, g, b, (float)a);
-
+    return RGBAColor(round(tr * 255.0), round(tg * 255.0), round(tb * 255.0), a);
 }
 
-double ColorPicker::calc_color(double c, double t1, double t2){
-	if (c < 0) c += 1.0f;
-	if (c > 1) c -= 1.0f;
-	if (6.0f * c < 1.0f) return t1 + (t2 - t1) * 6.0f * c;
-	if (2.0f * c < 1.0f) return t2;
-	if (3.0f * c < 2.0f) return t1 + (t2 - t1) * (2.0f / 3.0f - c) * 6.0f;
-	return t1;
+
+double ColorPicker::calc_color(double c, double t1, double t2) {
+    if (c < 0) {
+        c += 1.0f;
+    }
+
+    if (c > 1) {
+        c -= 1.0f;
+    }
+
+    if (6.0f * c < 1.0f) {
+        return t1 + (t2 - t1) * 6.0f * c;
+    }
+
+    if (2.0f * c < 1.0f) {
+        return t2;
+    }
+
+    if (3.0f * c < 2.0f) {
+        return t1 + (t2 - t1) * (2.0f / 3.0f - c) * 6.0f;
+    }
+
+    return t1;
 }
 
 
