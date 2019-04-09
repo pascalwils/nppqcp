@@ -2,25 +2,25 @@
 /*
 
 USAGE:
-	create and show:
+    create and show:
 
-		#include "QuickColorPicker\ColorPicker.h"
-		#include "QuickColorPicker\ColorPicker.res.h"
-		
-		using namespace QuickColorPicker;
+        #include "QuickColorPicker\ColorPicker.h"
+        #include "QuickColorPicker\ColorPicker.res.h"
+        
+        using namespace QuickColorPicker;
 
-		ColorPicker* pColorPicker = new ColorPicker();
-		pColorPicker->Create(hInstance, hwndParent);
-		pColorPicker->SetColor(RGBAColor(255,0,128,1));
-		pColorPicker->SetParentRect(rc);
-		pColorPicker->Show();
+        ColorPicker* pColorPicker = new ColorPicker();
+        pColorPicker->Create(hInstance, hwndParent);
+        pColorPicker->SetColor(RGBAColor(255,0,128,1));
+        pColorPicker->SetParentRect(rc);
+        pColorPicker->Show();
 
-	messages:
-		WM_QCP_PICK
-			User picked a color
-			LPARAM is the color in COLORREF format
-		WM_QCP_CANCEL
-			User cancelled the operation
+    messages:
+        WM_QCP_PICK
+            User picked a color
+            LPARAM is the color in COLORREF format
+        WM_QCP_CANCEL
+            User cancelled the operation
 
 
 */
@@ -38,209 +38,200 @@ USAGE:
 #endif //COLOR_PICKER_RESOURCE_H
 
 namespace QuickColorPicker {
-	
+    struct RGBAColor {
+        inline RGBAColor() {}
+        inline RGBAColor(byte r, byte g, byte b, float a) : r(r), g(g), b(b), a(a) {}
 
-	struct RGBAColor {
-		inline RGBAColor() {}
-		inline RGBAColor(byte r, byte g, byte b, float a)
-			: r(r), g(g), b(b), a(a) {}
+        unsigned char r = 0, g = 0, b = 0;
+        float a = 1.0f;
 
-		unsigned char r = 0, g = 0, b = 0;
-		float a = 1.0f;
+        inline RGBAColor(COLORREF color) {
+            r = GetRValue(color);
+            g = GetGValue(color);
+            b = GetBValue(color);
+        }
 
-		inline RGBAColor(COLORREF color) {
-			r = GetRValue(color);
-			g = GetGValue(color);
-			b = GetBValue(color);
-		}
+        inline bool operator==(RGBAColor rgba) {
+            if (rgba.r == r && rgba.g == g && rgba.b == b && rgba.a == a) {
+                return true;
+            }
+            return false;
+        }
 
-		inline bool operator==(RGBAColor rgba) {
-			if (rgba.r == r && rgba.g == g && rgba.b == b && rgba.a == a)
-				return true;
-			else
-				return false;
-		}
-
-		inline operator COLORREF() {
-			return RGB(r, g, b);
-		}
-
-	};
+        inline operator COLORREF() {
+            return RGB(r, g, b);
+        }
+    };
 
 
-	struct HSLAColor {
-		inline HSLAColor() {}
-		inline HSLAColor(double h, double s, double l, float a = 1.0f)
-			: h(h), s(s), l(l), a(a) {}
-		double h = 0, s = 0, l = 0;
-		float a = 1.0f;
-	};
+    struct HSLAColor {
+        inline HSLAColor() {}
+        inline HSLAColor(double h, double s, double l, float a = 1.0f) : h(h), s(s), l(l), a(a) {}
 
-	
-
-	class ColorPicker {
-
-	public:
-
-		ColorPicker();
-		~ColorPicker();
-
-		bool focus_on_show;
-
-		void Create(HINSTANCE instance, HWND parent, HWND message_window = NULL);
-
-		bool IsCreated() const {
-			return (_color_popup != NULL);
-		};
-
-		HWND GetWindow() const {
-			return _color_popup;
-		};
-		HWND GetParentWindow() const {
-			return _parent_window;
-		};
-		HINSTANCE GetInstance() const {
-			return _instance;
-		};
-
-		// specify a message window for return value if needed
-		void SetMessageWindow(HWND hwnd) {
-			_message_window = hwnd;
-		}
-
-		void SetParentRect(RECT rc);
-
-		void Show();
-		void Hide();
-
-		void ShowScreenPicker();
-
-		bool IsVisible() const {
-			return (::IsWindowVisible(_color_popup) ? true : false);
-		};
+        double h = 0;
+        double s = 0;
+        double l = 0;
+        float a = 1.0f;
+    };
 
 
-		// Other stuffs here
-		void SetColor(const RGBAColor color);
-		RGBAColor GetColor() {
-			return _old_color;
-		}
+    class ColorPicker {
+    public:
+        ColorPicker();
+        ~ColorPicker();
 
-		void SetHSLAColor(HSLAColor color);
-		HSLAColor GetHSLAColor();
+        bool focus_on_show;
 
-		bool SetHexColor(const char* hex_color);
-		bool GetHexColor(char* out_hex, int buffer_size);
+        void Create(HINSTANCE instance, HWND parent, HWND message_window = NULL);
 
-		void SetRecentColor(const RGBAColor* colors);
-		void GetRecentColor(RGBAColor* &colors);
+        bool IsCreated() const {
+            return _color_popup != NULL;
+        }
+
+        HWND GetWindow() const {
+            return _color_popup;
+        }
+
+        HWND GetParentWindow() const {
+            return _parent_window;
+        }
+
+        HINSTANCE GetInstance() const {
+            return _instance;
+        }
+
+        // specify a message window for return value if needed
+        void SetMessageWindow(HWND hwnd) {
+            _message_window = hwnd;
+        }
+
+        void SetParentRect(RECT rc);
+
+        void Show();
+        void Hide();
+
+        void ShowScreenPicker();
+
+        bool IsVisible() const {
+            return ::IsWindowVisible(_color_popup) ? true : false;
+        }
 
 
-	protected:
+        // Other stuffs here
+        void SetColor(const RGBAColor color);
+        RGBAColor GetColor() {
+            return _old_color;
+        }
 
-		HINSTANCE _instance;
-		HWND _parent_window;
-		HWND _color_popup;
+        void SetHSLAColor(HSLAColor color);
+        HSLAColor GetHSLAColor();
 
-		RECT _parent_rc;
+        bool SetHexColor(const char* hex_color);
+        bool GetHexColor(char* out_hex, int buffer_size);
 
-	private:
+        void SetRecentColor(const RGBAColor* colors);
+        void GetRecentColor(RGBAColor* &colors);
 
-		HWND _message_window;
+    protected:
+        HINSTANCE _instance;
+        HWND _parent_window;
+        HWND _color_popup;
 
-		HCURSOR _pick_cursor;
-		bool _show_picker_cursor;
+        RECT _parent_rc;
 
-		bool _old_color_found_in_palette;
-		RGBAColor _old_color;
-		RGBAColor _new_color;
+    private:
+        HWND _message_window;
 
-		RGBAColor _color_palette_data[PALETTE_ROW + 1][PALETTE_COLUMN + 1];
-		RGBAColor _recent_color_data[RECENT_ZONE_ROW*RECENT_ZONE_COLUMN];
+        HCURSOR _pick_cursor;
+        bool _show_picker_cursor;
 
-		RECT _rect_palette;
+        bool _old_color_found_in_palette;
+        RGBAColor _old_color;
+        RGBAColor _new_color;
 
-		int _old_color_row;
-		int _old_color_index;
+        RGBAColor _color_palette_data[PALETTE_ROW + 1][PALETTE_COLUMN + 1];
+        RGBAColor _recent_color_data[RECENT_ZONE_ROW * RECENT_ZONE_COLUMN];
 
-		RGBAColor _previous_color;
-		int _previous_row;
-		int _previous_index;
+        RECT _rect_palette;
 
-		RECT _rect_adjust_buttons;
+        int _old_color_row;
+        int _old_color_index;
 
-		RGBAColor _adjust_color_data[4][ADJUST_ZONE_ROW];
-		RGBAColor _adjust_color;
-		double _adjust_preserved_hue;
-		double _adjust_preserved_saturation;
-		int _adjust_center_row;
-		int _adjust_row;
-		int _adjust_index;
+        RGBAColor _previous_color;
+        int _previous_row;
+        int _previous_index;
 
-		bool _is_first_create;
-		bool _is_color_chooser_shown;
+        RECT _rect_adjust_buttons;
 
-		static void PlaceWindow(const HWND hwnd, const RECT rc);
+        RGBAColor _adjust_color_data[4][ADJUST_ZONE_ROW];
+        RGBAColor _adjust_color;
+        double _adjust_preserved_hue;
+        double _adjust_preserved_saturation;
+        int _adjust_center_row;
+        int _adjust_row;
+        int _adjust_index;
 
-		// main popup
-		static BOOL CALLBACK ColorPopupWinproc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
-		BOOL CALLBACK ColorPopupMessageHandle(UINT message, WPARAM wparam, LPARAM lparam);
+        bool _is_first_create;
+        bool _is_color_chooser_shown;
 
-		void OnInitDialog();
-		BOOL OnMouseMove(LPARAM lparam);
-		BOOL OnMouseClick(LPARAM lparam, bool is_right_button);
+        static void PlaceWindow(const HWND hwnd, const RECT rc);
 
-		bool PointInRect(const POINT p, const RECT rc);
-		void PaintAll();
+        // main popup
+        static BOOL CALLBACK ColorPopupWinproc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
+        BOOL CALLBACK ColorPopupMessageHandle(UINT message, WPARAM wparam, LPARAM lparam);
 
-		void DrawColorBlock(const HDC hdc, const RECT rc, const RGBAColor color, bool ignore_alpha = false);
-		COLORREF mixcolor(RGBAColor fgcolor, RGBAColor bkcolor);
+        void OnInitDialog();
+        BOOL OnMouseMove(LPARAM lparam);
+        BOOL OnMouseClick(LPARAM lparam, bool is_right_button);
+        BOOL OnScreenPick(WPARAM wparam);
 
-		// color preview
-		void PaintColorCompareSwatch();
-		void DisplayNewColor(RGBAColor color);
+        bool PointInRect(const POINT p, const RECT rc);
+        void PaintAll();
 
-		// palette
-		void GenerateColorPaletteData(float alpha = 1.0f);
-		void LoadRecentColorData();
-		void SaveToRecentColor(RGBAColor color);
-		void FillRecentColorData();
+        void DrawColorBlock(const HDC hdc, const RECT rc, const RGBAColor color, bool ignore_alpha = false);
+        COLORREF mixcolor(RGBAColor fgcolor, RGBAColor bkcolor);
 
-		void PaintColorPalette();
-		void DrawColorHoverBox(int row, int index, bool is_hover = true);
-		void PaletteMouseMove(const POINT p);
-		void PaletteMouseClick(const POINT p, bool is_right_button);
+        // color preview
+        void PaintColorCompareSwatch();
+        void DisplayNewColor(RGBAColor color);
 
-		void GenerateAdjustColors(RGBAColor color);
-		void PaintAdjustZone();
-		void DrawAdjustZoneCenterRow(HDC hdc);
-		void DrawAdjustZoneHoverBox(int row, int index, bool is_hover = true);
-		void AdjustZoneMouseMove(const POINT p);
-		void AdjustZoneMouseClick(const POINT p, bool is_right_button);
+        // palette
+        void GenerateColorPaletteData(float alpha = 1.0f);
+        void LoadRecentColorData();
+        void SaveToRecentColor(RGBAColor color);
+        void FillRecentColorData();
 
-		// screen color picker
-		ScreenPicker* _pScreenPicker;
-		void StartPickScreenColor();
-		void EndPickScreenColor();
+        void PaintColorPalette();
+        void DrawColorHoverBox(int row, int index, bool is_hover = true);
+        void PaletteMouseMove(const POINT p);
+        void PaletteMouseClick(const POINT p, bool is_right_button);
 
-		// windows color chooser
-		void ShowColorChooser();
-		static UINT_PTR CALLBACK ColorChooserWINPROC(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
+        void GenerateAdjustColors(RGBAColor color);
+        void PaintAdjustZone();
+        void DrawAdjustZoneCenterRow(HDC hdc);
+        void DrawAdjustZoneHoverBox(int row, int index, bool is_hover = true);
+        void AdjustZoneMouseMove(const POINT p);
+        void AdjustZoneMouseClick(const POINT p, bool is_right_button);
 
-		// helper functions
-		bool hex2rgb(const char* hex_str, RGBAColor* out_color);
-		bool rgb2hex(const RGBAColor rgb, char* out_hex, int buffer_size);
-		HSLAColor rgb2hsl(const RGBAColor rgb);
-		RGBAColor hsl2rgb(const HSLAColor hsl);
-		RGBAColor hsl2rgb(const double h, const double s, const double l, const float a);
-		double calc_color(double c, double t1, double t2);
+        // screen color picker
+        ScreenPicker* _pScreenPicker;
+        void StartPickScreenColor();
+        void EndPickScreenColor();
 
-		int round(double number);
+        // windows color chooser
+        void ShowNativeColorChooser();
+        static UINT_PTR CALLBACK ColorChooserWINPROC(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 
-	};
+        // helper functions
+        bool hex2rgb(const char* hex_str, RGBAColor* out_color);
+        bool rgb2hex(const RGBAColor rgb, char* out_hex, int buffer_size);
+        HSLAColor rgb2hsl(const RGBAColor rgb);
+        RGBAColor hsl2rgb(const HSLAColor hsl);
+        RGBAColor hsl2rgb(const double h, const double s, const double l, const float a);
+        double calc_color(double c, double t1, double t2);
 
+        int round(double number);
+    };
 }
 
 #endif //COLOR_PICKER_H
-
-
